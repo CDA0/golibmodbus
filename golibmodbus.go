@@ -257,11 +257,11 @@ func SetBitsFromByte(index int, value uint8) []uint8 {
   return output
 }
 
-func (m *Modbus) SetBitsFromBytes(index int, nbBits uint, tabByte *uint8) []uint8 { return SetBitsFromBytes(index, nbBits, tabByte) }
-func SetBitsFromBytes(index int, nbBits uint, tabByte *uint8) []uint8 {
+func (m *Modbus) SetBitsFromBytes(index int, nbBits uint, tabByte []uint8) []uint8 { return SetBitsFromBytes(index, nbBits, tabByte) }
+func SetBitsFromBytes(index int, nbBits uint, tabByte []uint8) []uint8 {
   cIndex := C.int(index)
   cNbBits := C.uint(nbBits)
-  cTabByte := (*C.uint8_t)(unsafe.Pointer(tabByte))
+  cTabByte := (*C.uint8_t)(unsafe.Pointer(&tabByte[0]))
 
   output := make([]uint8, nbBits)
   cOutput := (*C.uint8_t)(&output[0])
@@ -271,18 +271,18 @@ func SetBitsFromBytes(index int, nbBits uint, tabByte *uint8) []uint8 {
   return output
 }
 
-func (m *Modbus) GetByteFromBits(source *uint8, index int, nbBits uint) byte { return GetByteFromBits(source, index, nbBits) }
-func GetByteFromBits(source *uint8, index int, nbBits uint) byte {
-  cSource := (*C.uint8_t)(unsafe.Pointer(source))
+func (m *Modbus) GetByteFromBits(source []uint8, index int, nbBits uint) byte { return GetByteFromBits(source, index, nbBits) }
+func GetByteFromBits(source []uint8, index int, nbBits uint) byte {
+  cSource := (*C.uint8_t)(unsafe.Pointer(&source[0]))
   cIndex := C.int(index)
   cNbBits := C.uint(nbBits)
 
   return byte(C.modbus_get_byte_from_bits(cSource, cIndex,cNbBits))
 }
 
-func (m *Modbus) GetFloat(src *uint16) float32 { return GetFloat(src) }
-func GetFloat(src *uint16) float32 {
-  cSrc := (*C.uint16_t)(unsafe.Pointer(src))
+func (m *Modbus) GetFloat(src [2]uint16) float32 { return GetFloat(src) }
+func GetFloat(src [2]uint16) float32 {
+  cSrc := (*C.uint16_t)(unsafe.Pointer(&src[0]))
 
   return float32(C.modbus_get_float(cSrc))
 }
@@ -299,9 +299,9 @@ func SetFloat(f float32) []uint16 {
   return output
 }
 
-func (m *Modbus) GetFloatDcba(src *uint16) float32 { return GetFloatDcba(src) }
-func GetFloatDcba(src *uint16) float32 {
-  cSrc := (*C.uint16_t)(unsafe.Pointer(src))
+func (m *Modbus) GetFloatDcba(src [2]uint16) float32 { return GetFloatDcba(src) }
+func GetFloatDcba(src [2]uint16) float32 {
+  cSrc := (*C.uint16_t)(unsafe.Pointer(&src[0]))
 
   return float32(C.modbus_get_float_dcba(cSrc))
 }
@@ -380,7 +380,7 @@ func (m *Modbus) ReadRegisters(addr int, nb int) ([]uint16, error) {
   return output, err
 }
 
-func (m *Modbus) ReadInputRegisters(addr int, nb int, dest *uint16) ([]uint16, error) {
+func (m *Modbus) ReadInputRegisters(addr int, nb int) ([]uint16, error) {
   cAddr := C.int(addr)
   cNb := C.int(nb)
 
@@ -394,7 +394,7 @@ func (m *Modbus) ReadInputRegisters(addr int, nb int, dest *uint16) ([]uint16, e
   return output, err
 }
 
-func (m *Modbus) ReportSlaveId(maxDest int, dest *uint8) ([]uint8, error) {
+func (m *Modbus) ReportSlaveId(maxDest int) ([]uint8, error) {
   cMaxDest := C.int(maxDest)
 
   output := make([]uint8, maxDest)
@@ -429,30 +429,30 @@ func (m *Modbus) WriteRegister(addr int, value int) (int, error) {
   return int(r), err
 }
 
-func (m *Modbus) WriteBits(addr int, nb int, src *uint8) (int, error) {
+func (m *Modbus) WriteBits(addr int, nb int, src []uint8) (int, error) {
   cAddr := C.int(addr)
   cNb := C.int(nb)
-  cSrc := (*C.uint8_t)(unsafe.Pointer(src))
+  cSrc := (*C.uint8_t)(unsafe.Pointer(&src[0]))
 
   r, err :=  C.modbus_write_bits(m.ctx, cAddr, cNb, cSrc)
 
   return int(r), err
 }
 
-func (m *Modbus) WriteRegisters(addr int, nb int, src *uint16) (int, error) {
+func (m *Modbus) WriteRegisters(addr int, nb int, src []uint16) (int, error) {
   cAddr := C.int(addr)
   cNb := C.int(nb)
-  cSrc := (*C.uint16_t)(unsafe.Pointer(src))
+  cSrc := (*C.uint16_t)(unsafe.Pointer(&src[0]))
 
   r, err :=  C.modbus_write_registers(m.ctx, cAddr, cNb, cSrc)
 
   return int(r), err
 }
 
-func (m *Modbus) WriteAndReadRegisters(writeAddr int, writeNb int, src *uint16, readAddr int, readNb int) ([]uint16, error) {
+func (m *Modbus) WriteAndReadRegisters(writeAddr int, writeNb int, src []uint16, readAddr int, readNb int) ([]uint16, error) {
   cWriteAddr := C.int(writeAddr)
   cWriteNb := C.int(writeNb)
-  cSrc := (*C.uint16_t)(unsafe.Pointer(src))
+  cSrc := (*C.uint16_t)(unsafe.Pointer(&src[0]))
   cReadAddr := C.int(readAddr)
   cReadNb := C.int(readNb)
 
@@ -466,8 +466,8 @@ func (m *Modbus) WriteAndReadRegisters(writeAddr int, writeNb int, src *uint16, 
   return output, err
 }
 
-func (m *Modbus) SendRawRequest(rawReq *uint8, rawReqLen int) (int, error) {
-  cRawReq := (*C.uint8_t)(unsafe.Pointer(rawReq))
+func (m *Modbus) SendRawRequest(rawReq []uint8, rawReqLen int) (int, error) {
+  cRawReq := (*C.uint8_t)(unsafe.Pointer(&rawReq[0]))
   cRawReqLen := C.int(rawReqLen)
 
   r, err :=  C.modbus_send_raw_request(m.ctx, cRawReq, cRawReqLen)
@@ -477,8 +477,8 @@ func (m *Modbus) SendRawRequest(rawReq *uint8, rawReqLen int) (int, error) {
   return int(r), err
 }
 
-func (m *Modbus) ReceiveConfirmation(rsp *uint8) (int, error) {
-  cRsp := (*C.uint8_t)(unsafe.Pointer(rsp))
+func (m *Modbus) ReceiveConfirmation(rsp []uint8) (int, error) {
+  cRsp := (*C.uint8_t)(unsafe.Pointer(&rsp[0]))
 
   r, err :=  C.modbus_receive_confirmation(m.ctx, cRsp)
 
@@ -487,8 +487,8 @@ func (m *Modbus) ReceiveConfirmation(rsp *uint8) (int, error) {
   return int(r), err
 }
 
-func (m *Modbus) ReplyException(req *uint8, exceptionCode int) (int, error) {
-  cReq := (*C.uint8_t)(unsafe.Pointer(req))
+func (m *Modbus) ReplyException(req []uint8, exceptionCode int) (int, error) {
+  cReq := (*C.uint8_t)(unsafe.Pointer(&req[0]))
   cExceptionCode := C.uint(exceptionCode)
 
   r, err :=  C.modbus_reply_exception(m.ctx, cReq, cExceptionCode)
@@ -517,16 +517,16 @@ func (m *Modbus) MappingFree() {
   C.modbus_mapping_free(m.mb_mapping)
 }
 
-func (m *Modbus) Receive(req *uint8) (int, error) {
-  r, err :=  C.modbus_receive(m.ctx, (*C.uint8_t)(unsafe.Pointer(req)))
+func (m *Modbus) Receive(req []uint8) (int, error) {
+  r, err :=  C.modbus_receive(m.ctx, (*C.uint8_t)(unsafe.Pointer(&req[0])))
 
   err = CheckError(err)
 
   return int(r), err
 }
 
-func (m *Modbus) Reply(req *uint8, reqLength int) (int, error) {
-  cReq := (*C.uint8_t)(unsafe.Pointer(req))
+func (m *Modbus) Reply(req []uint8, reqLength int) (int, error) {
+  cReq := (*C.uint8_t)(unsafe.Pointer(&req[0]))
   cReqLength := C.int(reqLength)
 
   r, err :=  C.modbus_reply(m.ctx,  cReq, cReqLength, m.mb_mapping)
